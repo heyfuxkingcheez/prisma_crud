@@ -1,0 +1,51 @@
+### 회원가입
+#
+POST http://localhost:3018/api/sign-up
+Content-Type: application/json
+
+{
+"email":"example00@gmail.com",
+"password":"aaa111",
+"name":"정기욱",
+"age":27,
+"gender":"male",
+"profileImage":"https://prismalens.vercel.app/header/logo-dark.svg"
+}
+
+### 로그인
+#
+POST http://localhost:3018/api/sign-in
+Content-Type: application/json
+
+{
+    "email": "example00@gmail.com",
+    "password": "aaa111"
+}
+
+### 유저 정보 조회
+#
+GET http://localhost:3018/api/users
+
+### 게시글 작성 api
+#
+POST http://localhost:3018/api/posts
+Content-Type: application/json
+
+{
+    "title": "게시글의 제목입니다2.",
+    "content": "내용입니다2."
+}
+
+### 게시글 목록 조회 api
+GET http://localhost:3018/api/posts
+
+### 게시글 상세 조회 api
+GET http://localhost:3018/api/posts/2
+
+### 댓글 생성 api
+POST http://localhost:3018/api/posts/2/comments
+Content-Type: application/json
+
+{
+    "content": "댓글입니다."
+}

@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -6,6 +8,65 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model Users {
+  userId    Int      @id @default(autoincrement()) @map("userId")
+  email     String   @unique @map("email")
+  password  String   @map("password")
+  refreshToken String @default("asdf") @map("refreshToken") 
+  createdAt DateTime @default(now()) @map("createdAt")
+  updatedAt DateTime @updatedAt @map("updatedAt")
+
+  UserInfos UserInfos? // 사용자(Users) 테이블과 사용자 정보(UserInfos) 테이블이 1:1관계를 맺습니다.
+  Posts     Posts[] // 사용자(Users) 테이블과 게시글(Posts) 테이블이 1:N 관계를 맺습니다.
+  Comments Comments[] // 사용자 테이블과 게시글 테이블이 1:N 관계를 맺습니다.
+
+  @@map("Users")
+}
+
+model Posts {
+  postId    Int      @id @default(autoincrement()) @map("postId")
+  UserId    Int      @map("UserId") // 사용자(Users) 테이블을 참조하는 왜래키
+  title     String   @map("title")
+  content   String   @map("content") @db.Text
+  createdAt DateTime @default(now()) @map("createdAt")
+  updatedAt DateTime @updatedAt @map("updatedAt")
+
+
+  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  Comments Comments[]// 게시글 테이블과 댓글 테이블이 1:N 관계를 맺습니다.
+
+  @@map("Posts")
+}
+
+model UserInfos {
+  userInfoId   Int      @id @default(autoincrement()) @map("userInfoId")
+  UserId       Int      @unique @map("UserId") // 사용자(Users) 테이블을 참조하는 왜래키
+  name         String   @map("name")
+  age          Int?     @map("age")
+  gender       String   @map("gender")
+  profileImage String?  @map("profileImage")
+  createdAt    DateTime @default(now()) @map("createdAt")
+  updatedAt    DateTime @updatedAt @map("updatedAt")
+
+
+  User Users @relation(fields: [UserId], references: [userId], onDelete:  Cascade)
+
+  @@map("UserInfos")
+}
+
+model Comments {
+  commentId Int      @id @default(autoincrement()) @map("commentId")
+  PostId    Int      @map("postId")
+  UserId    Int      @map("UserId")
+  content   String   @map("content")
+  createdAt DateTime @default(now()) @map("createdAt")
+  updatedAt DateTime @updatedAt @map("updatedAt")
+
+  Post Posts @relation(fields: [PostId], references: [postId], onDelete: Cascade)
+  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  @@map("Comments")
 }
