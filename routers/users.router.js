@@ -3,6 +3,7 @@ import { prisma } from '../src/utils/prisma/index.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { Prisma } from '@prisma/client';
 
 const usersRouter = Router();
 // 회원가입 api
@@ -23,22 +24,28 @@ usersRouter.post('/sign-up', async (req, res, next) => {
         // bcrypt 암호화
         const hashedPassword = await bcrypt.hash(password, 8);
 
-        // 생성
-        const user = await prisma.Users.create({
-            data: {
-                email,
-                password: hashedPassword,
+        const { user, userInfo } = await prisma.$transaction(
+            async (tx) => {
+                // 생성
+                const user = await tx.Users.create({
+                    data: {
+                        email,
+                        password: hashedPassword,
+                    },
+                });
+                const userInfo = await tx.UserInfos.create({
+                    data: {
+                        UserId: user.userId,
+                        name,
+                        age,
+                        gender: gender.toUpperCase(),
+                        profileImage,
+                    },
+                });
+                return [user, userInfo];
             },
-        });
-        const userIanfo = await prisma.UserInfos.create({
-            data: {
-                UserId: user.userId,
-                name,
-                age,
-                gender: gender.toUpperCase(),
-                profileImage,
-            },
-        });
+            { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted }
+        );
 
         return res
             .status(200)
@@ -66,31 +73,9 @@ usersRouter.post('/sign-in', async (req, res, next) => {
             .json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
     }
 
-    const ACCESS_TOKEN_SECRET_KEY = '1234';
-    const REFRESH_TOKEN_SECRET_KEY = '2345';
-    // 로그인 성공 시
-    // 엑세스 토큰 발급
-    const token = jwt.sign(
-        {
-            userId: user.userId,
-        },
-        ACCESS_TOKEN_SECRET_KEY,
-        { expiresIn: '10m' }
-    );
-    // 리프래쉬 토큰 발급
-    const newRefreshToken = jwt.sign({}, REFRESH_TOKEN_SECRET_KEY, {
-        expiresIn: '14d',
-    });
+    //로그인 성공
+    req.session.userId = user.userId;
 
-    await prisma.Users.updateMany({
-        where: { email },
-        data: {
-            refreshToken: newRefreshToken,
-        },
-    });
-
-    res.cookie('authorization', `Bearer ${token}`);
-    res.cookie('refreshtoken', `RefreshToken ${newRefreshToken}`);
     return res.status(200).json({ success: true, message: '로그인 성공' });
 });
 
@@ -118,5 +103,43 @@ usersRouter.get('/users', authMiddleware, async (req, res, next) => {
     });
 
     return res.status(200).json({ data: user });
+});
+
+// 사용자 정보 수정 api
+usersRouter.patch('/users', authMiddleware, async (req, res, next) => {
+    const { userId } = req.user;
+    const updatedData = req.body;
+    const userInfo = await prisma.userInfos.findFirst({
+        where: { UserId: +userId },
+    });
+
+    await prisma.$transaction(
+        async (tx) => {
+            await tx.userInfos.update({
+                data: {
+                    ...updatedData,
+                },
+                where: { UserId: +userId },
+            });
+
+            for (let key in updatedData) {
+                if (userInfo[key] !== updatedData[key]) {
+                    await tx.userHistories.create({
+                        data: {
+                            UserId: +userId,
+                            changedField: key,
+                            oldValue: String(userInfo[key]), // 변경 전 데이터
+                            newValue: String(updatedData[key]), // 변경 후 데이터
+                        },
+                    });
+                }
+            }
+        },
+        {
+            isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        }
+    );
+
+    return res.status(200).json({ message: '사용자 정보 변경 성공!' });
 });
 export { usersRouter };

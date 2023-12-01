@@ -23,8 +23,21 @@ model Users {
   UserInfos UserInfos? // 사용자(Users) 테이블과 사용자 정보(UserInfos) 테이블이 1:1관계를 맺습니다.
   Posts     Posts[] // 사용자(Users) 테이블과 게시글(Posts) 테이블이 1:N 관계를 맺습니다.
   Comments Comments[] // 사용자 테이블과 게시글 테이블이 1:N 관계를 맺습니다.
+  UserHistories UserHistories[]
 
   @@map("Users")
+}
+
+model UserHistories {
+  userHistoryId  String   @id @default(uuid())  @map("userHistoryId")
+  UserId         Int                            @map("UserId")
+  changedField   String                         @map("changedField")
+  oldValue       String?                        @map("oldValue")
+  newValue       String                         @map("newValue")
+  changedAt      DateTime     @default(now())   @map("changedAt")
+
+  // Users 테이블과 관계를 설정
+  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
 }
 
 model Posts {

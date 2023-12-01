@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../src/utils/prisma/index.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
+import expressSession from 'express-session';
 
 const postsRouter = Router();
 
@@ -54,4 +55,5 @@ postsRouter.get('/posts/:postId', async (req, res, next) => {
 
     return res.status(200).json({ data: post });
 });
+
 export { postsRouter };

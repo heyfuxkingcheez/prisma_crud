@@ -4,7 +4,7 @@ POST http://localhost:3018/api/sign-up
 Content-Type: application/json
 
 {
-"email":"example00@gmail.com",
+"email":"example01@gmail.com",
 "password":"aaa111",
 "name":"정기욱",
 "age":27,
@@ -25,6 +25,16 @@ Content-Type: application/json
 ### 유저 정보 조회
 #
 GET http://localhost:3018/api/users
+
+### 유저 정보 수정
+#
+PATCH http://localhost:3018/api/users
+Content-Type: application/json
+
+{
+    "name": "박현세",
+    "age": 26
+}
 
 ### 게시글 작성 api
 #
@@ -49,3 +59,18 @@ Content-Type: application/json
 {
     "content": "댓글입니다."
 }
+
+### 댓글 조회 api
+GET http://localhost:3018/api/posts/2/comments
+
+### 세션 설정 api
+POST http://localhost:3018/api/sessions
+Content-Type: application/json
+
+{
+    "userId": "564c32312ca32234677c217883"
+}
+
+### 세션 조회 api
+GET http://localhost:3018/api/sessions
+Content-Type: application/json
